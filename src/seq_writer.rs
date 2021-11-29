@@ -24,7 +24,7 @@ impl SeqWriter {
         }
     }
 
-    pub fn fron_connection_string(connection_string: String, app: String) -> Self {
+    pub fn from_connection_string(connection_string: String, app: String) -> Self {
         if connection_string.to_lowercase().starts_with("http") {
             return Self::new(connection_string, None, app);
         }
