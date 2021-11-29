@@ -2,6 +2,8 @@
 Seq Logger
 
 
+### Connection string
+
 To Setup Seq writer connection string must be specified like
 
 ```
@@ -12,3 +14,36 @@ Where
 
 * FlushLogsChunk means the biggest amount of message per upload;
 * FlushDelay means max delay between log event happendes and it uploaded
+
+
+### How to kick off the Seq writer
+
+#### Include my-logger to Cargo.toml
+```toml
+[dependencies]
+my-logger = { branch = "main", git = "https://github.com/MyJetTools/my-logger.git" }
+```
+#### Create MyLogger and SeqWriter instances and configure them together
+```rust
+
+#[tokio::main]
+async fn main() {
+
+
+let logger = MyLogger::new();
+
+let seq_writer = SeqWriter::from_connection_string("conn_stirng", "app-name");
+
+//Start publishing to seq
+seq_writer.start(&logger);
+
+
+//Stop publishing to seq
+seq_writer.shutdown();
+
+
+}
+
+
+
+```
