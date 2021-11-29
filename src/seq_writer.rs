@@ -72,7 +72,7 @@ impl SeqWriter {
         }
     }
 
-    pub fn start(&self, logger: &mut MyLogger) {
+    pub fn start(&self, logger: &MyLogger) {
         let logger_reader = logger.get_reader();
 
         tokio::spawn(read_log(
