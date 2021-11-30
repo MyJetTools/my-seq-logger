@@ -135,7 +135,7 @@ async fn flush_events(
 
     let events_amount = to_flush.len();
 
-    let upload_reusult = super::sdk::push_log_data(url, api_key, app, to_flush).await;
+    let upload_reusult = super::sdk::push_logs_data(url, api_key, app, to_flush).await;
 
     if let Err(err) = upload_reusult {
         println!(

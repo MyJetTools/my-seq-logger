@@ -3,7 +3,7 @@ use flurl::FlUrl;
 use hyper::Error;
 use my_logger::LogData;
 
-pub async fn push_log_data(
+pub async fn push_logs_data(
     url: &str,
     api_key: Option<&String>,
     app: &str,
