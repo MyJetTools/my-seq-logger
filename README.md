@@ -38,8 +38,14 @@ let seq_writer = SeqWriter::from_connection_string("conn_stirng", "app-name");
 seq_writer.start(&logger);
 
 
+///// Doing some program
+///// and writing logs...
+
+logger.write_log(....);
+
+
 //Stop publishing to seq
-seq_writer.shutdown();
+logger.shutdown();
 
 
 }
