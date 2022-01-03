@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 flurl = { branch = "main", git = "https://github.com/MyJetTools/fl-url" }
 rust-extensions = { branch = "main", git = "https://github.com/MyJetTools/rust-extensions.git" }
-my-logger = { branch = "main", git = "https://github.com/MyJetTools/my-logger.git" }
+my-logger = { branch = "0.1.0", git = "https://github.com/MyJetTools/my-logger.git" }
 
 serde = { version = "*", features = ["derive"] }
 serde_json = "1.0"

@@ -1,6 +1,6 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-use my_logger::{MyLogEvent, MyLogger, MyLoggerReader};
+use my_logger::{GetMyLoggerReader, MyLogEvent, MyLoggerReader};
 
 pub struct SeqWriter {
     pub url: String,
@@ -8,6 +8,7 @@ pub struct SeqWriter {
     pub max_logs_flush_chunk: usize,
     pub flush_delay: Duration,
     pub app: String,
+    my_logger_reader: Arc<MyLoggerReader>,
 }
 
 const DEFAULT_FLUSH_SLEEP: u64 = 1;
@@ -21,6 +22,7 @@ impl SeqWriter {
             max_logs_flush_chunk: DEFAULT_FLUSH_CHUNK,
             flush_delay: Duration::from_secs(DEFAULT_FLUSH_SLEEP),
             app,
+            my_logger_reader: Arc::new(MyLoggerReader::new()),
         }
     }
 
@@ -69,14 +71,13 @@ impl SeqWriter {
             app,
             flush_delay: Duration::from_secs(flush_delay),
             max_logs_flush_chunk,
+            my_logger_reader: Arc::new(MyLoggerReader::new()),
         }
     }
 
-    pub fn start(&self, logger: &MyLogger) {
-        let logger_reader = logger.get_reader();
-
+    pub fn start(&self) {
         tokio::spawn(read_log(
-            logger_reader,
+            self.my_logger_reader.clone(),
             self.url.clone(),
             self.api_key.clone(),
             self.app.clone(),
@@ -86,8 +87,14 @@ impl SeqWriter {
     }
 }
 
+impl GetMyLoggerReader for SeqWriter {
+    fn get(&self) -> Arc<MyLoggerReader> {
+        self.my_logger_reader.clone()
+    }
+}
+
 async fn read_log(
-    logger_reader: MyLoggerReader,
+    logger_reader: Arc<MyLoggerReader>,
     url: String,
     api_key: Option<String>,
     app: String,
