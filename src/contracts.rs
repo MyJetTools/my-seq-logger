@@ -1,4 +1,4 @@
-use my_logger::LogData;
+use my_logger::MyLogEvent;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -18,7 +18,7 @@ pub struct LogDataContract<'s> {
 }
 
 impl<'s> LogDataContract<'s> {
-    pub fn from(app: &'s str, src: LogData) -> Self {
+    pub fn from(app: &'s str, src: MyLogEvent) -> Self {
         Self {
             level: src.level.to_string(),
             app,

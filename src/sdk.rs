@@ -1,13 +1,13 @@
 use crate::contracts::LogDataContract;
 use flurl::FlUrl;
 use hyper::Error;
-use my_logger::LogData;
+use my_logger::MyLogEvent;
 
 pub async fn push_logs_data(
     url: &str,
     api_key: Option<&String>,
     app: &str,
-    data: Vec<LogData>,
+    data: Vec<MyLogEvent>,
 ) -> Result<(), Error> {
     let body = complie_body(app, data);
 
@@ -22,7 +22,7 @@ pub async fn push_logs_data(
     Ok(())
 }
 
-fn complie_body(app: &str, data: Vec<LogData>) -> Vec<u8> {
+fn complie_body(app: &str, data: Vec<MyLogEvent>) -> Vec<u8> {
     let mut result = Vec::new();
 
     for log_data in data {

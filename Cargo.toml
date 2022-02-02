@@ -1,6 +1,6 @@
 [package]
 name = "my-seq-logger"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,10 +8,10 @@ edition = "2021"
 [dependencies]
 flurl = { branch = "main", git = "https://github.com/MyJetTools/fl-url" }
 rust-extensions = { branch = "main", git = "https://github.com/MyJetTools/rust-extensions.git" }
-my-logger = { branch = "0.1.0", git = "https://github.com/MyJetTools/my-logger.git" }
+my-logger = { branch = "0.1.1", git = "https://github.com/MyJetTools/my-logger.git" }
 
 serde = { version = "*", features = ["derive"] }
-serde_json = "1.0"
-serde_derive = "1.0"
-hyper = { version = "0.14", features = ["full"] }
+serde_json = "*"
+serde_derive = "*"
+hyper = { version = "*", features = ["full"] }
 tokio = { version = "*", features = ["full"] }

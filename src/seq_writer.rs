@@ -1,20 +1,33 @@
 use std::{sync::Arc, time::Duration};
 
-use my_logger::{GetMyLoggerReader, MyLogEvent, MyLoggerReader};
+use my_logger::{MyLogEvent, MyLoggerReader};
+use tokio::sync::Mutex;
 
-pub struct SeqWriter {
+const DEFAULT_FLUSH_SLEEP: u64 = 1;
+const DEFAULT_FLUSH_CHUNK: usize = 50;
+
+pub struct SeqLogger {
     pub url: String,
     pub api_key: Option<String>,
     pub max_logs_flush_chunk: usize,
     pub flush_delay: Duration,
     pub app: String,
-    my_logger_reader: Arc<MyLoggerReader>,
+    log_events: Arc<Mutex<Vec<MyLogEvent>>>,
 }
 
-const DEFAULT_FLUSH_SLEEP: u64 = 1;
-const DEFAULT_FLUSH_CHUNK: usize = 50;
+impl MyLoggerReader for SeqLogger {
+    fn write_log(&self, log_event: MyLogEvent) {
+        let log_events = self.log_events.clone();
+        tokio::spawn(write_to_log(log_events, log_event));
+    }
+}
 
-impl SeqWriter {
+async fn write_to_log(log_events: Arc<Mutex<Vec<MyLogEvent>>>, log_event: MyLogEvent) {
+    let mut write_access = log_events.lock().await;
+    write_access.push(log_event);
+}
+
+impl SeqLogger {
     pub fn new(url: String, api_key: Option<String>, app: String) -> Self {
         Self {
             url,
@@ -22,7 +35,7 @@ impl SeqWriter {
             max_logs_flush_chunk: DEFAULT_FLUSH_CHUNK,
             flush_delay: Duration::from_secs(DEFAULT_FLUSH_SLEEP),
             app,
-            my_logger_reader: Arc::new(MyLoggerReader::new()),
+            log_events: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -71,13 +84,13 @@ impl SeqWriter {
             app,
             flush_delay: Duration::from_secs(flush_delay),
             max_logs_flush_chunk,
-            my_logger_reader: Arc::new(MyLoggerReader::new()),
+            log_events: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
     pub fn start(&self) {
         tokio::spawn(read_log(
-            self.my_logger_reader.clone(),
+            self.log_events.clone(),
             self.url.clone(),
             self.api_key.clone(),
             self.app.clone(),
@@ -87,14 +100,8 @@ impl SeqWriter {
     }
 }
 
-impl GetMyLoggerReader for SeqWriter {
-    fn get(&self) -> Arc<MyLoggerReader> {
-        self.my_logger_reader.clone()
-    }
-}
-
 async fn read_log(
-    logger_reader: Arc<MyLoggerReader>,
+    log_events: Arc<Mutex<Vec<MyLogEvent>>>,
     url: String,
     api_key: Option<String>,
     app: String,
@@ -102,15 +109,24 @@ async fn read_log(
     flush_delay: Duration,
 ) {
     loop {
-        let events = logger_reader.get_next_line(max_logs_flush_chunk).await;
+        let events = {
+            let mut events = log_events.lock().await;
+
+            if events.len() == 0 {
+                None
+            } else if events.len() <= max_logs_flush_chunk {
+                let mut result = Vec::new();
+                std::mem::swap(&mut result, &mut *events);
+                Some(result)
+            } else {
+                let result = events.drain(..max_logs_flush_chunk).collect();
+                Some(result)
+            }
+        };
 
         match events {
             Some(events) => {
-                let stop = flush_events(url.as_str(), api_key.as_ref(), app.as_str(), events).await;
-
-                if stop {
-                    break;
-                }
+                flush_events(url.as_str(), api_key.as_ref(), app.as_str(), events).await;
             }
             None => {
                 tokio::time::sleep(flush_delay).await;
@@ -119,30 +135,10 @@ async fn read_log(
     }
 }
 
-async fn flush_events(
-    url: &str,
-    api_key: Option<&String>,
-    app: &str,
-    events: Vec<MyLogEvent>,
-) -> bool {
-    let mut to_flush = Vec::with_capacity(events.len());
+async fn flush_events(url: &str, api_key: Option<&String>, app: &str, events: Vec<MyLogEvent>) {
+    let events_amount = events.len();
 
-    let mut result = false;
-
-    for event in events {
-        match event {
-            MyLogEvent::NewEvent(event) => {
-                to_flush.push(event);
-            }
-            MyLogEvent::TheEnd => {
-                result = true;
-            }
-        }
-    }
-
-    let events_amount = to_flush.len();
-
-    let upload_reusult = super::sdk::push_logs_data(url, api_key, app, to_flush).await;
+    let upload_reusult = super::sdk::push_logs_data(url, api_key, app, events).await;
 
     if let Err(err) = upload_reusult {
         println!(
@@ -150,8 +146,6 @@ async fn flush_events(
             events_amount, url, err
         );
     }
-
-    result
 }
 
 fn spit_key_value(str: &str) -> (&str, &str) {
