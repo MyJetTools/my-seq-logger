@@ -39,9 +39,9 @@ impl SeqLogger {
         }
     }
 
-    pub fn from_connection_string(connection_string: String, app: String) -> Self {
+    pub fn from_connection_string(connection_string: &str, app: String) -> Self {
         if connection_string.to_lowercase().starts_with("http") {
-            return Self::new(connection_string, None, app);
+            return Self::new(connection_string.to_string(), None, app);
         }
 
         let mut url = None;
@@ -53,18 +53,18 @@ impl SeqLogger {
             let (key, value) = spit_key_value(item);
 
             match key {
-                "Url" => {
+                "url" => {
                     url = Some(value);
                 }
-                "ApiKey" => {
+                "apikey" => {
                     api_key = Some(value.to_string());
                 }
-                "FlushLogsChunk" => {
+                "flushlogschunk" => {
                     max_logs_flush_chunk = value
                         .parse::<usize>()
                         .expect("FlushLogsChunk must be a number");
                 }
-                "FlushDelay" => {
+                "flushdelay" => {
                     let value = value.parse::<usize>().expect("FlushDelay must be a number");
                     flush_delay = value as u64;
                 }
