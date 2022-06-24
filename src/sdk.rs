@@ -31,8 +31,6 @@ fn complie_body(app: &str, data: Vec<MyLogEvent>) -> Vec<u8> {
         let contract = LogDataContract::from(app, log_data);
 
         let item = serde_json::to_vec(&contract).unwrap();
-
-        println!("{:?}", String::from_utf8(item.clone()).unwrap());
         result.extend(item);
     }
 
