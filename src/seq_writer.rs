@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use my_logger::{MyLogEvent, MyLoggerReader};
+use my_logger::{LogLevel, MyLogEvent, MyLoggerReader};
 use tokio::sync::Mutex;
 
 const DEFAULT_FLUSH_SLEEP: u64 = 1;
@@ -137,6 +137,22 @@ async fn read_log(
 
 async fn flush_events(url: &str, api_key: Option<&String>, app: &str, events: Vec<MyLogEvent>) {
     let events_amount = events.len();
+
+    for event in &events {
+        if let LogLevel::Info = event.level {
+            println!("-----------------");
+            println!(
+                "{} Level: {}",
+                event.dt.to_rfc3339(),
+                event.level.to_string()
+            );
+            println!("Process: {}", event.process);
+            println!("Message: {}", event.message);
+            if let Some(ctx) = &event.context {
+                println!("Context: {}", ctx);
+            }
+        }
+    }
 
     let upload_reusult = super::sdk::push_logs_data(url, api_key, app, events).await;
 

@@ -19,9 +19,7 @@ pub async fn push_logs_data(
         fl_url = fl_url.with_header("X-Seq-ApiKey", api_key);
     };
 
-    let result = fl_url.set_query_param("clef").post(Some(body)).await?;
-
-    println!("Status code is: {}", result.get_status_code());
+    fl_url.set_query_param("clef").post(Some(body)).await?;
 
     Ok(())
 }
