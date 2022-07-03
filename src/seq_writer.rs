@@ -15,18 +15,6 @@ pub struct SeqLogger {
     log_events: Arc<Mutex<Vec<MyLogEvent>>>,
 }
 
-impl MyLoggerReader for SeqLogger {
-    fn write_log(&self, log_event: MyLogEvent) {
-        let log_events = self.log_events.clone();
-        tokio::spawn(write_to_log(log_events, log_event));
-    }
-}
-
-async fn write_to_log(log_events: Arc<Mutex<Vec<MyLogEvent>>>, log_event: MyLogEvent) {
-    let mut write_access = log_events.lock().await;
-    write_access.push(log_event);
-}
-
 impl SeqLogger {
     pub fn new(url: String, api_key: Option<String>, app: String) -> Self {
         Self {
@@ -97,7 +85,21 @@ impl SeqLogger {
             self.max_logs_flush_chunk,
             self.flush_delay,
         ));
+
+        println!("Seq writer is started");
     }
+}
+
+impl MyLoggerReader for SeqLogger {
+    fn write_log(&self, log_event: MyLogEvent) {
+        let log_events = self.log_events.clone();
+        tokio::spawn(write_to_log(log_events, log_event));
+    }
+}
+
+async fn write_to_log(log_events: Arc<Mutex<Vec<MyLogEvent>>>, log_event: MyLogEvent) {
+    let mut write_access = log_events.lock().await;
+    write_access.push(log_event);
 }
 
 async fn read_log(
